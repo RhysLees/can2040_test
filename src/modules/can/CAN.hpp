@@ -16,18 +16,19 @@ typedef struct can2040_msg CANMsg;
 class CAN
 {
 public:
-    CAN(uint32_t sys_clock, uint32_t bitrate, uint8_t rxPin, uint8_t txPin, uint8_t txId);
+    CAN(uint8_t rxPin, uint8_t txPin, uint8_t rxId);
 
     void setup();
-    void transmit(uint8_t data);
+    void transmit(uint8_t id, uint8_t data);
 
 private:
+    static CAN *instancePointer;
     static CANHandle handle;
-    uint32_t sys_clock;
-    uint32_t bitrate;
+    uint32_t sys_clock = 125000000;
+    uint32_t bitrate = 125000;
     uint8_t rxPin;
     uint8_t txPin;
-    uint8_t txId;
+    uint8_t rxId;
 
     static void canCallback(CANHandle *cd, uint32_t notify, CANMsg *msg);
     static void pioIrqHandler();
