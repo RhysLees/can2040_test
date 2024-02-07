@@ -13,7 +13,7 @@ extern "C"
 CAN *CAN::instancePointer = nullptr;
 CANHandle CAN::handle; // Static member variable initialization
 
-CAN::CAN(uint8_t rxPin, uint8_t txPin, uint8_t rxId) : rxPin(rxPin), txPin(txPin), rxId(rxId)
+CAN::CAN(uint8_t rxPin, uint8_t txPin, uint16_t rxId) : rxPin(rxPin), txPin(txPin), rxId(rxId)
 {
     instancePointer = this;
 }
@@ -34,8 +34,10 @@ void CAN::setup()
     std::cout << "CAN: RX ID - " << (int)rxId << "\n";
 }
 
-void CAN::transmit(uint8_t id, uint8_t data)
+void CAN::transmit(uint16_t id, uint8_t data)
 {
+    std::cout << "CAN: TX ID - " << (int)id << "\n";
+
     CANMsg msg = {}; // Initialize the struct with zeros
     msg.dlc = 1;
     msg.id = id; // Use the dynamic transmit ID
@@ -43,8 +45,19 @@ void CAN::transmit(uint8_t id, uint8_t data)
 
     if (can2040_check_transmit(&handle))
     {
+        gpio_put(18, 1);
+
         int res = can2040_transmit(&handle, &msg);
         // Handle transmission result as needed
+
+        if (res == 0)
+        {
+            std::cout << "CAN: TX MESSAGE - (id: " << (msg.id & 0x7ff) << ", size: " << msg.dlc << ", data: " << msg.data32[0] << ", " << msg.data32[1] << ")\n";
+        }
+        else
+        {
+            std::cout << "CAN: TX ERROR - (" << res << ") on msg: (id: " << (msg.id & 0x7ff) << ", size: " << msg.dlc << ", data: " << msg.data32[0] << ", " << msg.data32[1] << ")\n";
+        }
     }
 }
 
@@ -55,14 +68,17 @@ void CAN::pioIrqHandler()
 
 void CAN::canCallback(CANHandle *cd, uint32_t notify, CANMsg *msg)
 {
+    if (instancePointer)
+    {
+        std::cout << "CAN: RX ID - " << (int)instancePointer->rxId << "\n";
+    }
+
     if (notify == CAN2040_NOTIFY_RX)
     {
         std::cout << "CAN: RX MESSAGE - (id: " << (msg->id & 0x7ff) << ", size: " << msg->dlc << ", data: " << msg->data32[0] << ", " << msg->data32[1] << ")\n";
 
         if (instancePointer && msg->id == instancePointer->rxId)
         {
-            std::cout << "CAN: RX ID - " << (int)instancePointer->rxId << "\n";
-
             if (msg->data32[0] == 0x01)
             {
                 gpio_put(20, 1);

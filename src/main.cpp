@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
@@ -18,25 +19,27 @@
 #define TXTWO_ID 0x202
 
 // #define RX_ID 0x201
-// #define TX_ID 0x200
-
-// #define RX_ID 0x202
-// #define TX_ID 0x200
+// // #define RX_ID 0x202
+// #define TXONE_ID 0x200
+// #define TXTWO_ID 0x200
 
 volatile bool BUTTONONE_pressed = false;
-volatile bool BUTTONONE_state = false;
-
-static void BUTTONONE_isr(uint gpio, uint32_t events)
-{
-    BUTTONONE_pressed = true;
-}
-
 volatile bool BUTTONTWO_pressed = false;
+
+volatile bool BUTTONONE_state = false;
 volatile bool BUTTONTWO_state = false;
 
-static void BUTTONTWO_isr(uint gpio, uint32_t events)
+static void BUTTON_isr(uint gpio, uint32_t events)
 {
-    BUTTONTWO_pressed = true;
+    if (gpio == BUTTONONE)
+    {
+        BUTTONONE_pressed = true;
+    }
+
+    if (gpio == BUTTONTWO)
+    {
+        BUTTONTWO_pressed = true;
+    }
 }
 
 void debounce()
@@ -67,67 +70,65 @@ int main()
 
     // CAN
     printf("Starting Initialization of CAN \n");
-    CAN can(RX_PIN, TX_PIN,(uint8_t)RX_ID);
+    CAN can(RX_PIN, TX_PIN, RX_ID);
     can.setup();
     printf("Initialized CAN \n");
 
-    // Set up interrupt for bUTTONONE press
-    gpio_set_irq_enabled_with_callback(BUTTONONE, GPIO_IRQ_EDGE_RISE, true, &BUTTONONE_isr);
-    gpio_set_irq_enabled_with_callback(BUTTONTWO, GPIO_IRQ_EDGE_RISE, true, &BUTTONTWO_isr);
+    // Set up interrupt for button pressess
+    gpio_set_irq_enabled_with_callback(BUTTONONE, GPIO_IRQ_EDGE_RISE, true, &BUTTON_isr);
+    gpio_set_irq_enabled(BUTTONTWO, GPIO_IRQ_EDGE_RISE, true);
 
     while (true)
     {
-        while (true)
+        // Check if the bUTTONONE was pressed
+        if (BUTTONONE_pressed)
         {
-            // Check if the bUTTONONE was pressed
-            if (BUTTONONE_pressed)
+            // Debouncing
+            debounce();
+
+            // Toggle the state
+            BUTTONONE_state = !BUTTONONE_state;
+
+            // Perform action based on the toggle state
+            if (BUTTONONE_state)
             {
-                // Debouncing
-                debounce();
-
-                // Toggle the state
-                BUTTONONE_state = !BUTTONONE_state;
-
-                // Perform action based on the toggle state
-                if (BUTTONONE_state)
-                {
-                    can.transmit((uint8_t)TXONE_ID, 0x01);
-                }
-                else
-                {
-                    can.transmit((uint8_t)TXONE_ID, 0x00);
-                }
-
-                // Reset the flag
-                BUTTONONE_pressed = false;
+                can.transmit(TXONE_ID, 0x01);
+            }
+            else
+            {
+                can.transmit(TXONE_ID, 0x00);
             }
 
-            // Check if the bUTTONONE was pressed
-            if (BUTTONTWO_pressed)
+            // Reset the flag
+            BUTTONONE_pressed = false;
+        }
+
+        // Check if the bUTTONONE was pressed
+        if (BUTTONTWO_pressed)
+        {
+            // Debouncing
+            debounce();
+
+            // Toggle the state
+            BUTTONTWO_state = !BUTTONTWO_state;
+
+            // Perform action based on the toggle state
+            if (BUTTONTWO_state)
             {
-                // Debouncing
-                debounce();
-
-                // Toggle the state
-                BUTTONTWO_state = !BUTTONTWO_state;
-
-                // Perform action based on the toggle state
-                if (BUTTONTWO_state)
-                {
-                    can.transmit((uint8_t)TXTWO_ID, 0x01);
-                }
-                else
-                {
-                    can.transmit((uint8_t)TXTWO_ID, 0x00);
-                }
-
-                // Reset the flag
-                BUTTONTWO_pressed = false;
+                can.transmit(TXTWO_ID, 0x01);
+            }
+            else
+            {
+                can.transmit(TXTWO_ID, 0x00);
             }
 
-            sleep_ms(100); // Adjust the delay as needed
+            // Reset the flag
+            BUTTONTWO_pressed = false;
         }
 
         sleep_ms(100); // Adjust the delay as needed
+
+        gpio_put(rxLed, 0);
+        gpio_put(txLed, 0);
     }
 }
