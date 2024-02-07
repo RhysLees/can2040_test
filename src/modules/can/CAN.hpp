@@ -30,5 +30,5 @@ private:
     uint8_t txId;
 
     static void canCallback(CANHandle *cd, uint32_t notify, CANMsg *msg);
-    static void pioIrqHandler(void);
+    static void pioIrqHandler();
 };

@@ -1,6 +1,6 @@
 #include "CAN.hpp"
 
-#include <stdio.h>
+#include <iostream>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 
@@ -8,6 +8,8 @@ extern "C"
 {
 #include "can2040.h"
 }
+
+CANHandle CAN::handle; // Static member variable initialization
 
 CAN::CAN(uint32_t sys_clock, uint32_t bitrate, uint8_t rxPin, uint8_t txPin, uint8_t txId)
     : sys_clock(sys_clock), bitrate(bitrate), rxPin(rxPin), txPin(txPin), txId(txId) {}
@@ -39,7 +41,7 @@ void CAN::transmit(uint8_t data)
     }
 }
 
-static void pioIrqHandler(void)
+void CAN::pioIrqHandler()
 {
     can2040_pio_irq_handler(&handle);
 }
@@ -48,7 +50,8 @@ void CAN::canCallback(CANHandle *cd, uint32_t notify, CANMsg *msg)
 {
     if (notify == CAN2040_NOTIFY_RX)
     {
-        printf("xfguo: recv msg: (id: %0x, size: %0x, data: %0x, %0x)\n", msg->id & 0x7ff, msg->dlc, msg->data32[0], msg->data32[1]);
+        std::cout << "xfguo: recv msg: (id: " << (msg->id & 0x7ff) << ", size: " << msg->dlc
+                  << ", data: " << msg->data32[0] << ", " << msg->data32[1] << ")\n";
 
         if (msg->data32[0] == 0x01)
         {
@@ -61,11 +64,11 @@ void CAN::canCallback(CANHandle *cd, uint32_t notify, CANMsg *msg)
     }
     else if (notify == CAN2040_NOTIFY_TX)
     {
-        printf("xfguo: confirmed tx msg: (id: %0x, size: %0x, data: %0x, %0x)\n", msg->id & 0x7ff, msg->dlc, msg->data32[0], msg->data32[1]);
+        std::cout << "xfguo: confirmed tx msg: (id: " << (msg->id & 0x7ff) << ", size: " << msg->dlc << ", data: " << msg->data32[0] << ", " << msg->data32[1] << ")\n";
     }
     else if (notify & CAN2040_NOTIFY_ERROR)
     {
-        printf("xfguo: error(%d) on msg: (id: %0x, size: %0x, data: %0x, %0x)\n", notify & 0xff, msg->id & 0x7ff, msg->dlc, msg->data32[0], msg->data32[1]);
+        std::cout << "xfguo: error(" << (notify & 0xff) << ") on msg: (id: " << (msg->id & 0x7ff) << ", size: " << msg->dlc << ", data: " << msg->data32[0] << ", " << msg->data32[1] << ")\n";
     }
     gpio_put(18, 1);
 }
