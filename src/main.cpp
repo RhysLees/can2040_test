@@ -42,12 +42,7 @@ static void BUTTON_isr(uint gpio, uint32_t events)
     }
 }
 
-void debounce()
-{
-    sleep_ms(20); // Adjust the delay as needed for debouncing
-}
-
-int main()
+void init(CAN &can)
 {
     stdio_init_all();
 
@@ -68,28 +63,24 @@ int main()
     gpio_init(idReceived);
     gpio_set_dir(idReceived, GPIO_OUT);
 
-    // CAN
-    printf("Starting Initialization of CAN \n");
-    CAN can(RX_PIN, TX_PIN, RX_ID);
-    can.setup();
-    printf("Initialized CAN \n");
-
     // Set up interrupt for button pressess
     gpio_set_irq_enabled_with_callback(BUTTONONE, GPIO_IRQ_EDGE_RISE, true, &BUTTON_isr);
     gpio_set_irq_enabled(BUTTONTWO, GPIO_IRQ_EDGE_RISE, true);
 
+    // CAN
+    printf("Starting Initialization of CAN \n");
+    can.setup();
+    printf("Initialized CAN \n");
+}
+
+void loop(CAN &can)
+{
     while (true)
     {
-        // Check if the bUTTONONE was pressed
         if (BUTTONONE_pressed)
         {
-            // Debouncing
-            debounce();
-
-            // Toggle the state
             BUTTONONE_state = !BUTTONONE_state;
 
-            // Perform action based on the toggle state
             if (BUTTONONE_state)
             {
                 can.transmit(TXONE_ID, 0x01);
@@ -99,20 +90,13 @@ int main()
                 can.transmit(TXONE_ID, 0x00);
             }
 
-            // Reset the flag
             BUTTONONE_pressed = false;
         }
 
-        // Check if the bUTTONONE was pressed
         if (BUTTONTWO_pressed)
         {
-            // Debouncing
-            debounce();
-
-            // Toggle the state
             BUTTONTWO_state = !BUTTONTWO_state;
 
-            // Perform action based on the toggle state
             if (BUTTONTWO_state)
             {
                 can.transmit(TXTWO_ID, 0x01);
@@ -122,7 +106,6 @@ int main()
                 can.transmit(TXTWO_ID, 0x00);
             }
 
-            // Reset the flag
             BUTTONTWO_pressed = false;
         }
 
@@ -131,4 +114,12 @@ int main()
         gpio_put(rxLed, 0);
         gpio_put(txLed, 0);
     }
+}
+
+int main()
+{
+    CAN can(RX_PIN, TX_PIN, RX_ID);
+    init(can);
+
+    loop(can);
 }
