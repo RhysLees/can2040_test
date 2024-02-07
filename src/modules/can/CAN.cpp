@@ -50,8 +50,7 @@ void CAN::canCallback(CANHandle *cd, uint32_t notify, CANMsg *msg)
 {
     if (notify == CAN2040_NOTIFY_RX)
     {
-        std::cout << "xfguo: recv msg: (id: " << (msg->id & 0x7ff) << ", size: " << msg->dlc
-                  << ", data: " << msg->data32[0] << ", " << msg->data32[1] << ")\n";
+        std::cout << "xfguo: recv msg: (id: " << (msg->id & 0x7ff) << ", size: " << msg->dlc << ", data: " << msg->data32[0] << ", " << msg->data32[1] << ")\n";
 
         if (msg->data32[0] == 0x01)
         {
