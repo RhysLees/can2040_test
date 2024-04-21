@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
 # Pull in SDK (must be before project)
-include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+include($ENV{PICO_SDK_PATH}/pico_sdk_import.cmake)
 
 project(can2040_project0)
 
@@ -13,7 +13,7 @@ pico_sdk_init()
 
 add_executable(can2040_project0
     src/main.c
-    $ENV{CAN2040_LIB_PATH}/src/can2040.c
+    $ENV{PICO_LIB_PATH}/can2040/src/can2040.c
 )
 
 target_include_directories(can2040_project0 PRIVATE

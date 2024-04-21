@@ -23,7 +23,7 @@ static void can2040_cb1(CANHandle *cd, uint32_t notify, CANMsg *msg)
 {
     if (notify == CAN2040_NOTIFY_RX)
     {
-        printf("xfguo: recv msg: (id: %0x, size: %0x, data: %0x, %0x)\n", msg->id & 0x7ff, msg->dlc, msg->data32[0], msg->data32[1]);
+        printf("recv msg: (id: %0x, size: %0x, data: %0x, %0x)\n", msg->id & 0x7ff, msg->dlc, msg->data32[0], msg->data32[1]);
 
         if (msg->data32[0] == 0x01)
         {
@@ -36,11 +36,11 @@ static void can2040_cb1(CANHandle *cd, uint32_t notify, CANMsg *msg)
     }
     else if (notify == CAN2040_NOTIFY_TX)
     {
-        printf("xfguo: confirmed tx msg: (id: %0x, size: %0x, data: %0x, %0x)\n", msg->id & 0x7ff, msg->dlc, msg->data32[0], msg->data32[1]);
+        printf("confirmed tx msg: (id: %0x, size: %0x, data: %0x, %0x)\n", msg->id & 0x7ff, msg->dlc, msg->data32[0], msg->data32[1]);
     }
     else if (notify & CAN2040_NOTIFY_ERROR)
     {
-        printf("xfguo: error(%d) on msg: (id: %0x, size: %0x, data: %0x, %0x)\n", notify & 0xff, msg->id & 0x7ff, msg->dlc, msg->data32[0], msg->data32[1]);
+        printf("error(%d) on msg: (id: %0x, size: %0x, data: %0x, %0x)\n", notify & 0xff, msg->id & 0x7ff, msg->dlc, msg->data32[0], msg->data32[1]);
     }
     gpio_put(rxLed, 1);
 }
